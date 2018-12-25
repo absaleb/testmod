@@ -44,4 +44,6 @@ func ListDirectory(dir string) error {
 	for _, f := range files {
 		fmt.Println(f.Name())
 	}
+
+	return nil
 }
