@@ -42,7 +42,8 @@ func ListDirectory(dir string) error {
 				return err
 			}
 
-			fmt.Println(path, info.Name(), filepath.Ext(info.Name()))
+			dt, err := GetExifDate(path)
+			fmt.Println(path, dt)
 			return nil
 		})
 
