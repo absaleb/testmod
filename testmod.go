@@ -2,6 +2,7 @@ package testmod
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -29,10 +30,18 @@ func GetExifDate(fname string) (*time.Time, error) {
 		log.Fatal(err)
 		return nil, err
 	}
-
-	//camModel, _ := x.Get(exif.Model) // normally, don't ignore errors!
-
 	tm, err := x.DateTime()
 
 	return &tm, err
+}
+
+func ListDirectory(dir string) error {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil{
+		return err
+	}
+
+	for _, f := range files {
+		fmt.Println(f.Name())
+	}
 }
