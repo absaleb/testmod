@@ -1,1 +1,1 @@
-module github.com/salebgithub/testmod
+module github.com/salebgithub/testmod/v2
