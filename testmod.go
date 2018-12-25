@@ -2,6 +2,7 @@ package testmod
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -44,6 +45,9 @@ func ListDirectory(dir string, outputDir string) error {
 				fmt.Println(path)
 			} else {
 				outputPath := filepath.Join(outputDir,fmt.Sprintf("%d%02d%02d", dt.Year(), dt.Month(), dt.Day()),info.Name())
+				r,_ := os.Open(path)
+				f,_ := os.Create(outputPath)
+io.Copy(f,r)
 				fmt.Println(outputPath)
 				fmt.Println(path, dt)
 			}
