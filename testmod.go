@@ -2,7 +2,6 @@ package testmod
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -37,15 +36,15 @@ func GetExifDate(fname string) (*time.Time, error) {
 }
 
 func ListDirectory(dir string) error {
-	files, err := ioutil.ReadDir(dir)
-	if err != nil{
-		return err
-	}
+	err := filepath.Walk(dir,
+		func(path string, info os.FileInfo, err error) error{
+			if err != nil{
+				return err
+			}
 
-	for _, f := range files {
-		fmt.Println(f.Name())
-		fmt.Println(filepath.Ext(f.Name()))
-	}
+			fmt.Println(path, info.Name(), filepath.Ext(info.Name()))
+			return nil
+		})
 
-	return nil
+	return err
 }
