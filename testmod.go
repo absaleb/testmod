@@ -32,7 +32,7 @@ func GetExifDate(fname string) (*time.Time, error) {
 	return &tm, err
 }
 
-func ListDirectory(dir string) error {
+func ListDirectory(dir string, outputDir string) error {
 	err := filepath.Walk(dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -43,6 +43,7 @@ func ListDirectory(dir string) error {
 			if err != nil {
 				fmt.Println(path)
 			} else {
+				fmt.Println(fmt.Sprintf("%4d%2s%2d", dt.Year(), dt.Month().String(), dt.Day()))
 				fmt.Println(path, dt)
 			}
 
