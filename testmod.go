@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/rwcarlsen/goexif/exif"
@@ -43,6 +44,7 @@ func ListDirectory(dir string) error {
 
 	for _, f := range files {
 		fmt.Println(f.Name())
+		fmt.Println(filepath.Ext(f.Name()))
 	}
 
 	return nil
