@@ -2,7 +2,6 @@ package testmod
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -19,7 +18,6 @@ func Sum(a int, b int, c int, name string) string {
 func GetExifDate(fname string) (*time.Time, error) {
 	f, err := os.Open(fname)
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
@@ -27,7 +25,6 @@ func GetExifDate(fname string) (*time.Time, error) {
 
 	x, err := exif.Decode(f)
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 	tm, err := x.DateTime()
@@ -37,13 +34,18 @@ func GetExifDate(fname string) (*time.Time, error) {
 
 func ListDirectory(dir string) error {
 	err := filepath.Walk(dir,
-		func(path string, info os.FileInfo, err error) error{
-			if err != nil{
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
 				return err
 			}
 
 			dt, err := GetExifDate(path)
-			fmt.Println(path, dt)
+			if err != nil {
+				fmt.Println(path)
+			} else {
+				fmt.Println(path, dt)
+			}
+
 			return nil
 		})
 
