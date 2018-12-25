@@ -43,7 +43,8 @@ func ListDirectory(dir string, outputDir string) error {
 			if err != nil {
 				fmt.Println(path)
 			} else {
-				fmt.Println(fmt.Sprintf("%4d%2s%2d", dt.Year(), dt.Month().String(), dt.Day()))
+				outputPath := filepath.Join(outputDir,fmt.Sprintf("%d%02d%02d", dt.Year(), dt.Month(), dt.Day()),info.Name())
+				fmt.Println(outputPath)
 				fmt.Println(path, dt)
 			}
 
