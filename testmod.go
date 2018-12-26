@@ -73,6 +73,9 @@ func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
 		waitAll <- true
 	}()
 
+	var files map[string]string
+	files = make(map[string]string)
+
 	err := filepath.Walk(dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -81,57 +84,58 @@ func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
 			if info.IsDir() {
 				return nil
 			}
-
-			// /////////////////////////////////////
-			<-goroutines
-			go func() {
-				var outputDir string
-				dt, err := GetExifDate(path)
-				if err != nil {
-					fmt.Println(path)
-					outputDir = filepath.Join(outputRootDir, "19700101")
-				} else {
-					outputDir = filepath.Join(outputRootDir, fmt.Sprintf("%d%02d%02d", dt.Year(), dt.Month(), dt.Day()))
-				}
-
-				if _, err = os.Stat(outputDir); os.IsNotExist(err) {
-					err = os.MkdirAll(outputDir, os.ModePerm)
-					if err != nil {
-						fmt.Printf("###err os.Open : %s\n", err)
-						return
-					}
-				}
-				outputPath := filepath.Join(outputDir, info.Name())
-
-				r, err := os.Open(path)
-				if err != nil {
-					fmt.Printf("###err os.Open : %s\n", err)
-					return
-				}
-				defer r.Close()
-
-				f, err := os.Create(outputPath)
-				if err != nil {
-					fmt.Printf("###err os.Create : %s\n", err)
-					return
-				}
-				defer f.Close()
-
-				_, err = io.Copy(f, r)
-				if err != nil {
-					fmt.Printf("###err os.Copy : %s\n", err)
-					return
-				}
-
-				fmt.Println(outputPath)
-				fmt.Println(path, dt)
-
-				done <- true
-			}()
+			files[path] = info.Name()
 
 			return nil
 		})
 
+	for path, name := range files {
+		<-goroutines
+		go func() {
+			var outputDir string
+			dt, err := GetExifDate(path)
+			if err != nil {
+				fmt.Println(path)
+				outputDir = filepath.Join(outputRootDir, "19700101")
+			} else {
+				outputDir = filepath.Join(outputRootDir, fmt.Sprintf("%d%02d%02d", dt.Year(), dt.Month(), dt.Day()))
+			}
+
+			if _, err = os.Stat(outputDir); os.IsNotExist(err) {
+				err = os.MkdirAll(outputDir, os.ModePerm)
+				if err != nil {
+					fmt.Printf("###err os.Open : %s\n", err)
+					return
+				}
+			}
+			outputPath := filepath.Join(outputDir, name)
+
+			r, err := os.Open(path)
+			if err != nil {
+				fmt.Printf("###err os.Open : %s\n", err)
+				return
+			}
+			defer r.Close()
+
+			f, err := os.Create(outputPath)
+			if err != nil {
+				fmt.Printf("###err os.Create : %s\n", err)
+				return
+			}
+			defer f.Close()
+
+			_, err = io.Copy(f, r)
+			if err != nil {
+				fmt.Printf("###err os.Copy : %s\n", err)
+				return
+			}
+
+			fmt.Println(outputPath)
+			fmt.Println(path, dt)
+
+			done <- true
+		}()
+	}
 	<-waitAll
 	return err
 }
