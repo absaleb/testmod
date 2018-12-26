@@ -39,6 +39,10 @@ func ListDirectory(dir string, outputRootDir string) error {
 			if err != nil {
 				return err
 			}
+			if info.IsDir(){
+				return nil
+			}
+
 			var outputDir string
 			dt, err := GetExifDate(path)
 			if err != nil {
@@ -56,6 +60,7 @@ func ListDirectory(dir string, outputRootDir string) error {
 				}
 			}
 			outputPath := filepath.Join(outputDir, info.Name())
+
 			r, err := os.Open(path)
 			if err != nil {
 				fmt.Printf("###err os.Open : %s\n", err)
