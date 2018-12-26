@@ -53,7 +53,7 @@ func getNumberOfFiles(dir string) int {
 
 func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
 	maxNumGoroutines := flag.Int("maxNumGoroutines", maxGoroutines, "max number of goroutines")
-	numOfJobs := flag.Int("numOfJobs", getNumberOfFiles(dir)*maxGoroutines, "number of jobs")
+	numOfJobs := flag.Int("numOfJobs", getNumberOfFiles(dir), "number of jobs")
 
 	flag.Parse()
 
