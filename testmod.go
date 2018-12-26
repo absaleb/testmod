@@ -39,13 +39,15 @@ func ListDirectory(dir string, outputRootDir string) error {
 			if err != nil {
 				return err
 			}
-
+			var outputDir string
 			dt, err := GetExifDate(path)
 			if err != nil {
 				fmt.Println(path)
-				return err
+				outputDir = filepath.Join(outputRootDir, "19700101")
+			} else {
+				outputDir = filepath.Join(outputRootDir, fmt.Sprintf("%d%02d%02d", dt.Year(), dt.Month(), dt.Day()))
 			}
-			outputDir := filepath.Join(outputRootDir, fmt.Sprintf("%d%02d%02d", dt.Year(), dt.Month(), dt.Day()))
+
 			if _, err = os.Stat(outputDir); os.IsNotExist(err) {
 				err = os.MkdirAll(outputDir, os.ModePerm)
 				if err != nil {
