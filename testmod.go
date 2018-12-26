@@ -1,6 +1,7 @@
 package testmod
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -33,55 +34,104 @@ func GetExifDate(fname string) (*time.Time, error) {
 	return &tm, err
 }
 
-func ListDirectory(dir string, outputRootDir string) error {
+func getNumberOfFiles(dir string) int {
+	count := 0
+
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			count = count + 1
+		}
+		return nil
+	})
+
+	if err != nil {
+		return 0
+	}
+
+	return count
+}
+
+func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
+	maxNumGoroutines := flag.Int("maxNumGoroutines", maxGoroutines, "max number of goroutines")
+	numOfJobs := flag.Int("numOfJobs", getNumberOfFiles(dir), "number of jobs")
+
+	flag.Parse()
+
+	goroutines := make(chan struct{}, *maxNumGoroutines)
+	for i := 0; i < *maxNumGoroutines; i++ {
+		goroutines <- struct{}{}
+	}
+
+	done := make(chan bool)
+	waitAll := make(chan bool)
+
+	go func() {
+		for i := 0; i < *numOfJobs; i++ {
+			<-done
+			goroutines <- struct{}{}
+		}
+		waitAll <- true
+	}()
+
 	err := filepath.Walk(dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			if info.IsDir(){
+			if info.IsDir() {
 				return nil
 			}
 
-			var outputDir string
-			dt, err := GetExifDate(path)
-			if err != nil {
-				fmt.Println(path)
-				outputDir = filepath.Join(outputRootDir, "19700101")
-			} else {
-				outputDir = filepath.Join(outputRootDir, fmt.Sprintf("%d%02d%02d", dt.Year(), dt.Month(), dt.Day()))
-			}
+			// /////////////////////////////////////
+			<-goroutines
+			go func() {
+				var outputDir string
+				dt, err := GetExifDate(path)
+				if err != nil {
+					fmt.Println(path)
+					outputDir = filepath.Join(outputRootDir, "19700101")
+				} else {
+					outputDir = filepath.Join(outputRootDir, fmt.Sprintf("%d%02d%02d", dt.Year(), dt.Month(), dt.Day()))
+				}
 
-			if _, err = os.Stat(outputDir); os.IsNotExist(err) {
-				err = os.MkdirAll(outputDir, os.ModePerm)
+				if _, err = os.Stat(outputDir); os.IsNotExist(err) {
+					err = os.MkdirAll(outputDir, os.ModePerm)
+					if err != nil {
+						fmt.Printf("###err os.Open : %s\n", err)
+						return
+					}
+				}
+				outputPath := filepath.Join(outputDir, info.Name())
+
+				r, err := os.Open(path)
 				if err != nil {
 					fmt.Printf("###err os.Open : %s\n", err)
-					return err
+					return
 				}
-			}
-			outputPath := filepath.Join(outputDir, info.Name())
+				defer r.Close()
 
-			r, err := os.Open(path)
-			if err != nil {
-				fmt.Printf("###err os.Open : %s\n", err)
-				return err
-			}
-			f, err := os.Create(outputPath)
-			if err != nil {
-				fmt.Printf("###err os.Create : %s\n", err)
-				return err
-			}
-			_, err = io.Copy(f, r)
-			if err != nil {
-				fmt.Printf("###err os.Copy : %s\n", err)
-				return err
-			}
+				f, err := os.Create(outputPath)
+				if err != nil {
+					fmt.Printf("###err os.Create : %s\n", err)
+					return
+				}
+				defer f.Close()
 
-			fmt.Println(outputPath)
-			fmt.Println(path, dt)
+				_, err = io.Copy(f, r)
+				if err != nil {
+					fmt.Printf("###err os.Copy : %s\n", err)
+					return
+				}
+
+				fmt.Println(outputPath)
+				fmt.Println(path, dt)
+
+				done <- true
+			}()
 
 			return nil
 		})
 
+	<-waitAll
 	return err
 }
