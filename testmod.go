@@ -43,32 +43,35 @@ func ListDirectory(dir string, outputRootDir string) error {
 			dt, err := GetExifDate(path)
 			if err != nil {
 				fmt.Println(path)
-			} else {
-				outputDir := filepath.Join(outputRootDir, fmt.Sprintf("%d%02d%02d", dt.Year(), dt.Month(), dt.Day()))
+				return err
+			}
+			outputDir := filepath.Join(outputRootDir, fmt.Sprintf("%d%02d%02d", dt.Year(), dt.Month(), dt.Day()))
+			if _, err = os.Stat(outputDir); os.IsNotExist(err) {
 				err = os.MkdirAll(outputDir, os.ModePerm)
 				if err != nil {
 					fmt.Printf("###err os.Open : %s\n", err)
-				}else {
-					outputPath := filepath.Join(outputDir, info.Name())
-					r, err := os.Open(path)
-					if err != nil {
-						fmt.Printf("###err os.Open : %s\n", err)
-					} else {
-						f, err := os.Create(outputPath)
-						if err != nil {
-							fmt.Printf("###err os.Create : %s\n", err)
-						} else {
-							_, err = io.Copy(f, r)
-							if err != nil {
-								fmt.Printf("###err os.Copy : %s\n", err)
-							}
-						}
-					}
-					fmt.Println(outputPath)
+					return err
 				}
-
-				fmt.Println(path, dt)
 			}
+			outputPath := filepath.Join(outputDir, info.Name())
+			r, err := os.Open(path)
+			if err != nil {
+				fmt.Printf("###err os.Open : %s\n", err)
+				return err
+			}
+			f, err := os.Create(outputPath)
+			if err != nil {
+				fmt.Printf("###err os.Create : %s\n", err)
+				return err
+			}
+			_, err = io.Copy(f, r)
+			if err != nil {
+				fmt.Printf("###err os.Copy : %s\n", err)
+				return err
+			}
+
+			fmt.Println(outputPath)
+			fmt.Println(path, dt)
 
 			return nil
 		})
