@@ -97,7 +97,7 @@ func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
 				err = os.MkdirAll(outputDir, os.ModePerm)
 				if err != nil {
 					fmt.Printf("###err os.Open : %s\n", err)
-					return
+					return err
 				}
 			}
 			outputPath := filepath.Join(outputDir, info.Name())
