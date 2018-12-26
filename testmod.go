@@ -53,25 +53,22 @@ func getNumberOfFiles(dir string) int {
 
 func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
 	maxNumGoroutines := flag.Int("maxNumGoroutines", maxGoroutines, "max number of goroutines")
-	numOfJobs := flag.Int("numOfJobs", getNumberOfFiles(dir), "number of jobs")
+	//numOfJobs := flag.Int("numOfJobs", getNumberOfFiles(dir), "number of jobs")
 
 	flag.Parse()
 
-	goroutines := make(chan struct{}, *maxNumGoroutines)
+	goroutines := make(chan bool, *maxNumGoroutines)
 	for i := 0; i < *maxNumGoroutines; i++ {
-		goroutines <- struct{}{}
+		goroutines <- true
 	}
 
 	done := make(chan bool)
-	waitAll := make(chan bool)
 
-	go func() {
-		for i := 0; i < *numOfJobs; i++ {
-			<-done
-			goroutines <- struct{}{}
-		}
-		waitAll <- true
-	}()
+	// waitAll := make(chan bool)
+	//
+	// total := 0
+	// finished := 0
+	// allDone := false
 
 	var files map[string]string
 	files = make(map[string]string)
@@ -107,9 +104,20 @@ func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
 			return nil
 		})
 
+	// go func() {
+	// 	for i := 0; i < *numOfJobs; i++ {
+	// 		<-done
+	// 		goroutines <- true
+	// 	}
+	// 	waitAll <- true
+	// }()
+
 	for path, outputPath := range files {
-		<-goroutines
+		goroutines <- true
+
 		go func() {
+			defer func() { <-goroutines }()
+
 			r, err := os.Open(path)
 			if err != nil {
 				fmt.Printf("###err os.Open : %s\n", err)
@@ -135,6 +143,11 @@ func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
 			done <- true
 		}()
 	}
-	<-waitAll
+
+	for i := 0; i < cap(goroutines); i++ {
+		goroutines <- true
+	}
+
+	// <-waitAll
 	return err
 }
