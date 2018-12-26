@@ -84,14 +84,6 @@ func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
 			if info.IsDir() {
 				return nil
 			}
-			files[path] = info.Name()
-
-			return nil
-		})
-
-	for path, name := range files {
-		<-goroutines
-		go func() {
 			var outputDir string
 			dt, err := GetExifDate(path)
 			if err != nil {
@@ -108,8 +100,16 @@ func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
 					return
 				}
 			}
-			outputPath := filepath.Join(outputDir, name)
+			outputPath := filepath.Join(outputDir, info.Name())
 
+			files[path] = outputPath
+
+			return nil
+		})
+
+	for path, outputPath := range files {
+		<-goroutines
+		go func() {
 			r, err := os.Open(path)
 			if err != nil {
 				fmt.Printf("###err os.Open : %s\n", err)
@@ -131,7 +131,6 @@ func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
 			}
 
 			fmt.Println(outputPath)
-			fmt.Println(path, dt)
 
 			done <- true
 		}()
