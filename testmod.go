@@ -74,6 +74,7 @@ func ListDirectory(dir string, outputRootDir string, maxGoroutines int) error {
 	}()
 
 	var files map[string]string
+
 	files = make(map[string]string)
 
 	err := filepath.Walk(dir,
